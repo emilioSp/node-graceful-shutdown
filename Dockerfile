@@ -10,4 +10,5 @@ WORKDIR /opt
 
 RUN yarn install --production
 
-CMD ["yarn", "serve"]
+# CMD ["yarn", "serve"] --> this will not work, because yarn will terminated as soon as the term signal is received.
+CMD ["node", "index.js"]
