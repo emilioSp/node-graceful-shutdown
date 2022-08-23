@@ -18,9 +18,10 @@ server.listen(80, async (error) => {
 
 let shutdown = false;
 const closeGracefull = (signal) => () => {
+  console.log(`Received ${signal} signal`);
   if (shutdown) return;
 
-  console.log(`Received ${signal} signal, shutting down gracefully...`);
+  console.log('Shutdown gracefully...');
   shutdown = true;
 
   // Forcefully close the server if there are other ongoing connections
