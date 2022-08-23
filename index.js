@@ -5,8 +5,6 @@ import router from './router.js';
 process.on('uncaughtException', (e) => console.error('uncaughtException', e));
 process.on('unhandledRejection', (e) => console.error('unhandledRejection', e));
 
-process.on('SIGHUP', signal => console.log(`*^!@4 => Received event: ${signal}`));
-
 const app = new koa();
 
 app.use(router.routes());
