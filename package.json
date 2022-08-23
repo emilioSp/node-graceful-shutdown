@@ -1,0 +1,26 @@
+{
+  "name": "graceful-shutdown",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emilioSp/node-graceful-shutdown.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emilioSp/node-graceful-shutdown/issues"
+  },
+  "homepage": "https://github.com/emilioSp/node-graceful-shutdown#readme",
+  "dependencies": {
+    "@koa/router": "^10.1.1",
+    "koa": "^2.13.4",
+    "koa-no-slash": "^1.0.2"
+  }
+}
