@@ -8,7 +8,7 @@ router.get('/healthcheck', (ctx) => {
 });
 
 router.get('/delayed', async (ctx) => {
-  await setTimeout( 50000);
+  await setTimeout(10000);
   ctx.body = { ok: true };
 });
 
