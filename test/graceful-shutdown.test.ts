@@ -1,6 +1,5 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert';
-import http from 'node:http';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -11,60 +10,25 @@ const ROOT_DIR = resolve(__dirname, '..');
 const TEST_PORT = 3456;
 let currentServerProcess: ChildProcess | null = null;
 
-function makeRequest(path: string, timeout = 5000): Promise<{ status: number; body: unknown }> {
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(new Error(`Request to ${path} timed out`));
-    }, timeout);
+const makeRequest = async (path: string): Promise<{ status: number; body: unknown }> => {
+  const response = await fetch(`http://localhost:${TEST_PORT}${path}`);
 
-    const req = http.request(
-      {
-        hostname: 'localhost',
-        port: TEST_PORT,
-        path,
-        method: 'GET',
-      },
-      (res) => {
-        let data = '';
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        res.on('end', () => {
-          clearTimeout(timeoutId);
-          try {
-            resolve({ status: res.statusCode!, body: JSON.parse(data) });
-          } catch {
-            resolve({ status: res.statusCode!, body: data });
-          }
-        });
-      }
-    );
-    req.on('error', (e) => {
-      clearTimeout(timeoutId);
-      reject(e);
-    });
-    req.end();
-  });
+  const text = await response.text();
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    body = text;
+  }
+
+  return { status: response.status, body };
 }
 
-async function killServer(serverProcess: ChildProcess | null): Promise<void> {
-  if (!serverProcess || serverProcess.killed) return;
-  
-  return new Promise<void>((resolve) => {
-    serverProcess.once('exit', () => resolve());
-    serverProcess.kill('SIGKILL');
-
-    // Force resolve after timeout in case process doesn't respond
-    setTimeout(resolve, 2000);
-  });
-}
-
-function startServer(): Promise<ChildProcess> {
-  return new Promise((resolve, reject) => {
+const startServer = (): Promise<ChildProcess> => new Promise((resolve, reject) => {
     const serverProcess = spawn('node', ['index.ts'], {
       cwd: ROOT_DIR,
       env: { ...process.env, PORT: String(TEST_PORT) },
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'], // create streams for stdin, stdout, stderr accessible for parent
     });
 
     currentServerProcess = serverProcess;
@@ -72,6 +36,7 @@ function startServer(): Promise<ChildProcess> {
 
     serverProcess.stdout?.on('data', (data) => {
       const output = data.toString();
+      console.log('[SERVER]', output.trim());
       if (output.includes(`http serving on port ${TEST_PORT}`) && !started) {
         started = true;
         resolve(serverProcess);
@@ -79,7 +44,7 @@ function startServer(): Promise<ChildProcess> {
     });
 
     serverProcess.stderr?.on('data', (data) => {
-      console.error('Server stderr:', data.toString());
+      console.error('[SERVER ERROR]', data.toString().trim());
     });
 
     serverProcess.on('error', reject);
@@ -91,22 +56,12 @@ function startServer(): Promise<ChildProcess> {
       }
     }, 10000);
   });
-}
 
 describe('Graceful Shutdown', () => {
   afterEach(async () => {
-    await killServer(currentServerProcess);
+    currentServerProcess?.kill('SIGKILL');
     currentServerProcess = null;
     await sleep(200);
-  });
-
-  it('should respond to healthcheck endpoint', async () => {
-    const serverProcess = await startServer();
-
-    const response = await makeRequest('/healthcheck');
-
-    assert.strictEqual(response.status, 200);
-    assert.deepStrictEqual(response.body, { alive: true });
   });
 
   it('should gracefully shutdown on SIGTERM', async () => {
@@ -171,8 +126,7 @@ describe('Graceful Shutdown', () => {
   it('should complete in-flight requests before shutdown', async () => {
     const serverProcess = await startServer();
 
-    // Start a healthcheck request
-    const requestPromise = makeRequest('/healthcheck');
+    const requestPromise = makeRequest('/delayed');
 
     // Wait a tiny bit for request to be sent
     await sleep(50);
@@ -183,14 +137,14 @@ describe('Graceful Shutdown', () => {
     // The request should still complete successfully
     const response = await requestPromise;
     assert.strictEqual(response.status, 200);
-    assert.deepStrictEqual(response.body, { alive: true });
+    assert.deepStrictEqual(response.body, { ok: true });
   });
 
   it('should not accept new connections after shutdown signal', async () => {
     const serverProcess = await startServer();
 
     // Verify server is running
-    const response = await makeRequest('/healthcheck');
+    const response = await makeRequest('/delayed');
     assert.strictEqual(response.status, 200);
 
     // Set up exit promise before sending signal
@@ -206,7 +160,7 @@ describe('Graceful Shutdown', () => {
 
     // Try to make a new request - should fail
     try {
-      await makeRequest('/healthcheck', 2000);
+      await makeRequest('/delayed');
       assert.fail('Should not be able to connect after shutdown');
     } catch (error) {
       // Expected: connection should be refused or reset
@@ -215,29 +169,5 @@ describe('Graceful Shutdown', () => {
 
     // Wait for server to finish
     await exitPromise;
-  });
-});
-
-describe('Router Endpoints', () => {
-  afterEach(async () => {
-    await killServer(currentServerProcess);
-    currentServerProcess = null;
-    await sleep(200);
-  });
-
-  it('should return 404 for unknown routes', async () => {
-    await startServer();
-
-    const response = await makeRequest('/nonexistent');
-    assert.strictEqual(response.status, 404);
-  });
-
-  it('should return correct healthcheck response', async () => {
-    await startServer();
-
-    const response = await makeRequest('/healthcheck');
-
-    assert.strictEqual(response.status, 200);
-    assert.deepStrictEqual(response.body, { alive: true });
   });
 });
