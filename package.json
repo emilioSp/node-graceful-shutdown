@@ -1,12 +1,15 @@
 {
   "name": "graceful-shutdown",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "Node.js graceful shutdown example with Koa",
+  "main": "index.ts",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "node index.js"
+    "test": "node --test test/*.ts",
+    "serve": "node index.ts"
   },
   "repository": {
     "type": "git",
@@ -19,8 +22,12 @@
   },
   "homepage": "https://github.com/emilioSp/node-graceful-shutdown#readme",
   "dependencies": {
-    "@koa/router": "^10.1.1",
-    "koa": "^2.13.4",
-    "koa-no-slash": "^1.0.2"
+    "@koa/router": "^15.0.0",
+    "koa": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.15.0",
+    "@types/koa__router": "^12.0.4",
+    "@types/node": "^24.0.0"
   }
 }
