@@ -1,6 +1,6 @@
 # node-graceful-shutdown
 
-Example of graceful shutdown implementation in Node.js using native TypeScript support (Node.js 22+).
+Example of graceful shutdown implementation in Node.js using native TypeScript support (Node.js 24+).
 
 ## Features
 
@@ -11,7 +11,7 @@ Example of graceful shutdown implementation in Node.js using native TypeScript s
 
 ## Requirements
 
-- Node.js >= 22.6.0
+- Node.js >= 24.0.0
 
 ## Usage
 

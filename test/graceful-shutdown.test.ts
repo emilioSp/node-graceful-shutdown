@@ -61,7 +61,7 @@ async function killServer(serverProcess: ChildProcess | null): Promise<void> {
 
 function startServer(): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
-    const serverProcess = spawn('node', ['--experimental-strip-types', 'index.ts'], {
+    const serverProcess = spawn('node', ['index.ts'], {
       cwd: ROOT_DIR,
       env: { ...process.env, PORT: String(TEST_PORT) },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -79,11 +79,7 @@ function startServer(): Promise<ChildProcess> {
     });
 
     serverProcess.stderr?.on('data', (data) => {
-      // Ignore experimental warnings
-      const output = data.toString();
-      if (!output.includes('ExperimentalWarning')) {
-        console.error('Server stderr:', output);
-      }
+      console.error('Server stderr:', data.toString());
     });
 
     serverProcess.on('error', reject);
