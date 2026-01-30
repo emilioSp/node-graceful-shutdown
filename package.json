@@ -8,8 +8,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "test": "node --test test/*.ts",
-    "serve": "node index.ts"
+    "test": "node --env-file=.env --test test/*.ts",
+    "serve": "node --env-file=.env index.ts"
   },
   "repository": {
     "type": "git",

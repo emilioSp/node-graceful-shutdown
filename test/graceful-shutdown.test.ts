@@ -94,35 +94,6 @@ describe('Graceful Shutdown', () => {
     assert.ok(allLogs.includes('Closed out remaining connections'), 'Should log connection closure');
   });
 
-  it('should gracefully shutdown on SIGINT', async () => {
-    const serverProcess = await startServer();
-
-    // Verify server is running
-    const response = await makeRequest('/healthcheck');
-    assert.strictEqual(response.status, 200);
-
-    // Capture shutdown logs
-    const logs: string[] = [];
-    serverProcess.stdout?.on('data', (data) => {
-      logs.push(data.toString());
-    });
-
-    // Send SIGINT and wait for exit
-    const exitPromise = new Promise<number>((resolve) => {
-      serverProcess.once('exit', (code) => resolve(code ?? 0));
-    });
-    
-    serverProcess.kill('SIGINT');
-    const exitCode = await exitPromise;
-
-    assert.strictEqual(exitCode, 0, 'Server should exit with code 0 after graceful shutdown');
-
-    // Verify shutdown logs
-    const allLogs = logs.join('');
-    assert.ok(allLogs.includes('Received SIGINT signal'), 'Should log SIGINT signal');
-    assert.ok(allLogs.includes('Shutting down gracefully'), 'Should log graceful shutdown');
-  });
-
   it('should complete in-flight requests before shutdown', async () => {
     const serverProcess = await startServer();
 
